@@ -7,7 +7,5 @@ import jjon.pop.entity.PostEntity;
 
 @Repository
 public interface PostEntityRepository extends JpaRepository<PostEntity, Long> { // <Entity 명, Key 값>
-	
-	
 
 }
