@@ -37,7 +37,7 @@ public class Webconfiguration {
 		http.cors(Customizer.withDefaults())
 		.authorizeHttpRequests((request) -> request
 				.requestMatchers(HttpMethod.POST,
-						"/api/v1/users/**")
+						"/api/v1/users/**", "/api/v1/users/authenticate")
 				.permitAll()
 				.anyRequest().authenticated())
 		.sessionManagement(
