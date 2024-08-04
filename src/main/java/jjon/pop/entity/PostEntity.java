@@ -3,6 +3,7 @@ package jjon.pop.entity;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
+import org.hibernate.annotations.ManyToAny;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -11,13 +12,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "post")
-
+@Table(name = "post",
+indexes = {@Index(name = "post_userid_idx", columnList = "userid")})
+1
 @SQLDelete(sql = "UPDATE \"post\" SET deleteddatetime = CURRENT_TIMESTAMP WHERE postid = ?")
 @SQLRestriction("deleteddatetime is NULL")
 public class PostEntity {
@@ -38,7 +43,11 @@ public class PostEntity {
 	@Column
 	private ZonedDateTime deletedDateTime;
 	// 소프트 딜리트 . 내부통계용 (삭제시 외부에는 삭제된것으로보이나 내부에서는 일정기간 보유하는 케이스도있음)
-
+	
+	@ManyToOne
+	@JoinColumn(name = "userId")
+	private UserEntity user;
+	
 	public Long getPostId() {
 		return postId;
 	}
@@ -78,10 +87,22 @@ public class PostEntity {
 	public void setDeleteDateTime(ZonedDateTime deleteDateTime) {
 		this.deletedDateTime = deleteDateTime;
 	}
+	
+	
 
+	public UserEntity getUser() {
+		return user;
+	}
+
+	public void setUser(UserEntity user) {
+		this.user = user;
+	}
+
+	
+	
 	@Override
 	public int hashCode() {
-		return Objects.hash(body, createdDateTime, deletedDateTime, postId, updatedDateTime);
+		return Objects.hash(body, createdDateTime, deletedDateTime, postId, updatedDateTime, user);
 	}
 
 	@Override
@@ -95,9 +116,16 @@ public class PostEntity {
 		PostEntity other = (PostEntity) obj;
 		return Objects.equals(body, other.body) && Objects.equals(createdDateTime, other.createdDateTime)
 				&& Objects.equals(deletedDateTime, other.deletedDateTime) && Objects.equals(postId, other.postId)
-				&& Objects.equals(updatedDateTime, other.updatedDateTime);
+				&& Objects.equals(updatedDateTime, other.updatedDateTime) && Objects.equals(user, other.user);
+	}
+	public static PostEntity of(String body, UserEntity user) {
+		var post = new PostEntity();
+		post.setBody(body);
+		post.setUser(user);
+		return post;
 	}
 	
+
 	@PrePersist // 비유: 자동으로 기록되는 일기장
 	// 일기장을 처음 쓸 때 (엔티티 생성), 날짜와 함께 "오늘 일기 시작!"이라고 자동으로 첫 줄을 써주는 기능
 	private void prePersist() {

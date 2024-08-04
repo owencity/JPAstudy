@@ -15,13 +15,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 
 @Entity
-@Table(name = "\"user\"") // postgresql 에서는 user가 기본 예약어
+@Table(name = "\"user\"", // postgresql 에서는 user가 기본 예약어라 따로 \ 따로붙여줌
+indexes = {@Index(name = "user_username_idx", columnList = "username", unique = true)}) 
 @SQLDelete(sql = "UPDATE \"user\" SET deleteddatetime = CURRENT_TIMESTAMP WHERE postid = ?")
 @SQLRestriction("deleteddatetime is NULL")
 public class UserEntity implements UserDetails{

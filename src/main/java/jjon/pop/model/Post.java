@@ -5,11 +5,13 @@ import java.time.ZonedDateTime;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jjon.pop.entity.PostEntity;
+import jjon.pop.model.user.User;
 
 @JsonInclude(JsonInclude.Include.NON_NULL) // // JSON 직렬화 시 null 값 필드 제외
 public record Post(
 		Long postId, 
-		String body, 
+		String body,
+		User user,
 		ZonedDateTime createdDateTime,
 		ZonedDateTime updatedDateTime,
 		ZonedDateTime deletedDateTime
@@ -19,6 +21,7 @@ public record Post(
 			return new Post ( 
 					postEntity.getPostId(),
 					postEntity.getBody(),
+					User.from(postEntity.getUser()),
 					postEntity.getCreatedDateTime(),
 					postEntity.getUpdatedDateTime(),
 					postEntity.getDeletedDateTime());

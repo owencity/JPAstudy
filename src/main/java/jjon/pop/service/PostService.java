@@ -1,27 +1,26 @@
 package jjon.pop.service;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import jjon.pop.config.exception.post.PostNotFoundException;
+import jjon.pop.config.exception.user.UserNotAllowedException;
 import jjon.pop.entity.PostEntity;
+import jjon.pop.entity.UserEntity;
 import jjon.pop.model.Post;
 import jjon.pop.model.PostPatchRequestBody;
 import jjon.pop.model.PostPostRequestBody;
 import jjon.pop.repository.PostEntityRepository;
+import jjon.pop.repository.UserEntityRepository;
 
 @Service
 public class PostService {
 	
 	@Autowired private PostEntityRepository postEntityRepository;
-
+	@Autowired private UserEntityRepository userEntityRepository;
 	private static final List<Post> posts = new ArrayList<>();
 	
 	
@@ -41,20 +40,18 @@ public class PostService {
 
 	}
 
-	public Post createPost(PostPostRequestBody postPostRequestBody) {
-		var postEntity = new PostEntity();
-		postEntity.setBody(postPostRequestBody.body());
-		var savedPostEntity = postEntityRepository.save(postEntity);
-		return Post.from(savedPostEntity);
-		
-		
+	public Post createPost(PostPostRequestBody postPostRequestBody, UserEntity currentUser) {
+		var postEntity = postEntityRepository.save(
+				PostEntity.of(postPostRequestBody.body(), currentUser));
+		return Post.from(postEntity);
 	}
 
-	public Post updatePost(Long postId, PostPatchRequestBody postPatchRequestBody) {
-		var postEntity = postEntityRepository
-				.findById(postId) // OPtional postId를 반환
-				.orElseThrow(
-						() -> new PostNotFoundException(postId));
+	public Post updatePost(Long postId, PostPatchRequestBody postPatchRequestBody, UserEntity currentUser) {
+		var postEntity = postEntityRepository.findById(postId) .orElseThrow(() -> new PostNotFoundException(postId)); // OPtional postId를 반환
+		
+		if(!postEntity.getUser().equals(currentUser)) {
+			throw new UserNotAllowedException();
+		}
 		postEntity.setBody(postPatchRequestBody.body());
 		var updatedPostEntity = postEntityRepository.save(postEntity);
 		return Post.from(updatedPostEntity);
@@ -73,13 +70,26 @@ public class PostService {
 		
 	}
 
-	public void deletePost(Long postId) {
+	public void deletePost(Long postId, UserEntity currentUser) {
 		
-		var postEntity = postEntityRepository
-				.findById(postId) // OPtional postId를 반환
-				.orElseThrow(
-						() -> new PostNotFoundException(postId));	
+		var postEntity = 
+				postEntityRepository.findById(postId) .orElseThrow(() -> new PostNotFoundException(postId)); // OPtional postId를 반환
+		
+		if(!postEntity.getUser().equals(currentUser)) {
+			throw new UserNotAllowedException();
+		}
+		
 		postEntityRepository.delete(postEntity);
+	}
+
+	public List<Post> getPostByUsername(String username) {
+			var userEntity = userEntityRepository
+					.findByUsername(username) // OPtional postId를 반환
+					.orElseThrow(
+							() -> new PostNotFoundException(username));
+			
+			var postEntities = postEntityRepository.findByUser(userEntity);
+			return postEntities.stream().map(Post::from).toList();
 	}
 		
 //		Optional<Post> postOptional = 
