@@ -56,12 +56,18 @@ public class UserEntity implements UserDetails{
 	
 	@Column private String description;
 	
+	@Column private Long followersCount = 0L;
+	
+	@Column private Long followingsCount = 0L;
+	
 	@Column private ZonedDateTime createdDateTime;
 	
 	@Column private ZonedDateTime updatedDateTime;
 	
 	@Column private ZonedDateTime deletedDateTime;
 
+	
+	
 	public Long getUserId() {
 		return userId;
 	}
@@ -84,6 +90,22 @@ public class UserEntity implements UserDetails{
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public Long getFollowersCount() {
+		return followersCount;
+	}
+
+	public void setFollowersCount(Long followerCount) {
+		this.followersCount = followerCount;
+	}
+
+	public Long getFollowingsCount() {
+		return followingsCount;
+	}
+
+	public void setFolloswingCount(Long followingCount) {
+		this.followingsCount = followingCount;
 	}
 
 	public ZonedDateTime getCreatedDateTime() {
@@ -118,10 +140,13 @@ public class UserEntity implements UserDetails{
 		this.password = password;
 	}
 
+	
+	
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(createdDateTime, deletedDateTime, description, password, profile, updatedDateTime, userId,
-				username);
+		return Objects.hash(createdDateTime, deletedDateTime, description, followersCount, followingsCount, password,
+				profile, updatedDateTime, userId, username);
 	}
 
 	@Override
@@ -135,11 +160,13 @@ public class UserEntity implements UserDetails{
 		UserEntity other = (UserEntity) obj;
 		return Objects.equals(createdDateTime, other.createdDateTime)
 				&& Objects.equals(deletedDateTime, other.deletedDateTime)
-				&& Objects.equals(description, other.description) && Objects.equals(password, other.password)
+				&& Objects.equals(description, other.description)
+				&& Objects.equals(followersCount, other.followersCount)
+				&& Objects.equals(followingsCount, other.followingsCount) && Objects.equals(password, other.password)
 				&& Objects.equals(profile, other.profile) && Objects.equals(updatedDateTime, other.updatedDateTime)
 				&& Objects.equals(userId, other.userId) && Objects.equals(username, other.username);
 	}
-	
+
 	public static UserEntity of(String username, String password) {
 		var userEntity = new UserEntity();
 		userEntity.setUsername(username);

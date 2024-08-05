@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authorization.method.AuthorizeReturnObject;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import jjon.pop.config.exception.post.PostNotFoundException;
 import jjon.pop.config.exception.user.UserNotAllowedException;
+import jjon.pop.entity.LikeEntity;
 import jjon.pop.entity.PostEntity;
 import jjon.pop.entity.UserEntity;
 import jjon.pop.model.Post;
 import jjon.pop.model.PostPatchRequestBody;
 import jjon.pop.model.PostPostRequestBody;
+import jjon.pop.repository.LikeEntityRepository;
 import jjon.pop.repository.PostEntityRepository;
 import jjon.pop.repository.UserEntityRepository;
 
@@ -21,31 +25,39 @@ public class PostService {
 	
 	@Autowired private PostEntityRepository postEntityRepository;
 	@Autowired private UserEntityRepository userEntityRepository;
-	private static final List<Post> posts = new ArrayList<>();
+	@Autowired private LikeEntityRepository likeEntityRepository;
 	
-	
-	public List<Post> getPosts() {
+	public List<Post> getPosts(UserEntity currentUser) {
 		var postEntities = postEntityRepository.findAll();
 		
-		return postEntities.stream().map(Post::from).toList();
+		return postEntities.stream().map(
+				postEntity -> getPostWithLikingStatus(postEntity, currentUser)
+				).toList();
 	}
 	
-	public Post getPostByPostId(Long postId) {
+	public Post getPostByPostId(Long postId, UserEntity currentUser) {
 			var postEntity = postEntityRepository
 					.findById(postId) // OPtional postId를 반환
 					.orElseThrow(
 							() -> new PostNotFoundException(postId));
+			var isLiking = likeEntityRepository.findByUserAndPost(currentUser, postEntity).isPresent();
 			
-	return Post.from(postEntity);
+			return getPostWithLikingStatus(postEntity, currentUser);
 
+	}
+	
+	private Post getPostWithLikingStatus(PostEntity postEntity, UserEntity currentUser) {
+		var isLiking = likeEntityRepository.findByUserAndPost(currentUser, postEntity).isPresent();
+		return Post.from(postEntity, isLiking);
 	}
 
 	public Post createPost(PostPostRequestBody postPostRequestBody, UserEntity currentUser) {
-		var postEntity = postEntityRepository.save(
-				PostEntity.of(postPostRequestBody.body(), currentUser));
-		return Post.from(postEntity);
-	}
-
+	    var savedPostEntity =
+	        postEntityRepository.save(PostEntity.of(postPostRequestBody.body(), currentUser));
+	    return Post.from(savedPostEntity);
+	  }
+	
+	
 	public Post updatePost(Long postId, PostPatchRequestBody postPatchRequestBody, UserEntity currentUser) {
 		var postEntity = postEntityRepository.findById(postId) .orElseThrow(() -> new PostNotFoundException(postId)); // OPtional postId를 반환
 		
@@ -82,14 +94,34 @@ public class PostService {
 		postEntityRepository.delete(postEntity);
 	}
 
-	public List<Post> getPostByUsername(String username) {
+	public List<Post> getPostByUsername(String username, UserEntity currentUser) {
 			var userEntity = userEntityRepository
 					.findByUsername(username) // OPtional postId를 반환
 					.orElseThrow(
 							() -> new PostNotFoundException(username));
 			
 			var postEntities = postEntityRepository.findByUser(userEntity);
-			return postEntities.stream().map(Post::from).toList();
+			return postEntities.stream()
+					.map(postEntity -> getPostWithLikingStatus(postEntity, currentUser))
+					.toList();
+	}
+	
+	@Transactional
+	public Post toggleLike(Long postId, UserEntity currentUser) {
+		var postEntity = 
+				postEntityRepository.findById(postId) .orElseThrow(() -> new PostNotFoundException(postId));
+		var likeEntity = likeEntityRepository.findByUserAndPost(currentUser , postEntity);
+		
+		if(likeEntity.isPresent()) {
+			likeEntityRepository.delete(likeEntity.get());
+			postEntity.setLikesCount(Math.max(0, postEntity.getLikesCount() -1));
+			return Post.from(postEntityRepository.save(postEntity), false);
+		} else {
+			likeEntityRepository.save(LikeEntity.of(currentUser, postEntity));
+			postEntity.setLikesCount(postEntity.getLikesCount()+1);
+			return Post.from(postEntityRepository.save(postEntity), true);
+		}
+		
 	}
 		
 //		Optional<Post> postOptional = 

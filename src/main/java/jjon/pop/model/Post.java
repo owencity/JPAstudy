@@ -11,22 +11,46 @@ import jjon.pop.model.user.User;
 public record Post(
 		Long postId, 
 		String body,
+		Long repliesCount,
+		Long likesCount,
 		User user,
 		ZonedDateTime createdDateTime,
 		ZonedDateTime updatedDateTime,
-		ZonedDateTime deletedDateTime
+		ZonedDateTime deletedDateTime,
+		Boolean isLiking
 		) {
 		public static Post from(PostEntity postEntity) {
 			 // PostEntity를 Post로 변환
 			return new Post ( 
 					postEntity.getPostId(),
 					postEntity.getBody(),
+					postEntity.getRepliesCount(),
+					postEntity.getLikesCount(),
 					User.from(postEntity.getUser()),
 					postEntity.getCreatedDateTime(),
 					postEntity.getUpdatedDateTime(),
-					postEntity.getDeletedDateTime());
+					postEntity.getDeletedDateTime(),
+					null
+					);
+		}
+			
+			public static Post from(PostEntity postEntity, boolean isLiking) {
+				 // PostEntity를 Post로 변환
+				return new Post ( 
+						postEntity.getPostId(),
+						postEntity.getBody(),
+						postEntity.getRepliesCount(),
+						postEntity.getLikesCount(),
+						User.from(postEntity.getUser()),
+						postEntity.getCreatedDateTime(),
+						postEntity.getUpdatedDateTime(),
+						postEntity.getDeletedDateTime(),
+						isLiking
+						);
 					
 		}
+
+
 	
 }
 // 

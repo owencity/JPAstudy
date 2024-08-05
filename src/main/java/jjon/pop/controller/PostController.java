@@ -20,7 +20,9 @@ import jjon.pop.entity.UserEntity;
 import jjon.pop.model.Post;
 import jjon.pop.model.PostPatchRequestBody;
 import jjon.pop.model.PostPostRequestBody;
+import jjon.pop.model.user.LikedUser;
 import jjon.pop.service.PostService;
+import jjon.pop.service.UserService;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -29,21 +31,37 @@ public class PostController {
 	private static final Logger logger = LoggerFactory.getLogger(PostController.class);
 	
 	@Autowired private PostService postService;
+	@Autowired private UserService userService;
 	
 	@GetMapping
-	public ResponseEntity<List<Post>> getPosts() {
+	public ResponseEntity<List<Post>> getPosts(Authentication authentication) {
 		logger.info("GET /api/v1/posts");
-		var posts = postService.getPosts();
+		var posts = postService.getPosts((UserEntity) authentication.getPrincipal());
 		return ResponseEntity.ok(posts);
 	}
 	
 	@GetMapping("/{postId}")
-	public ResponseEntity<Post> getBypostsId(@PathVariable Long postId) {
+	public ResponseEntity<Post> getBypostsId(
+			@PathVariable Long postId, Authentication authentication) {
 //			@PathVariable("postId") Long postId  -> 기본형태는 이렇게 쓰나 스프링부트 3.2 버전 이상부터 -parameter 옵션 
 //			비활성화 되있어서 따로 설정해야 위에처럼사용가능
 		logger.info("GET /api/v1/posts/{}", postId);
-		var post  = postService.getPostByPostId(postId);
+		var post  = postService.getPostByPostId(postId, (UserEntity) authentication.getPrincipal());
 		return ResponseEntity.ok(post);
+
+		//				matchingPost.map(post -> ResponseEntity.ok(post))
+//				.orElseGet(() -> ResponseEntity.notFound().build());
+				// ElseGet -> Optional 안에 값이 없을때 404 Not Found 응답 반환.
+	} 
+	@GetMapping("/{postId}/liked-users")
+	public ResponseEntity<List<LikedUser>> getLikedUsersByPostId(
+			@PathVariable Long postId, Authentication authentication) {
+//			@PathVariable("postId") Long postId  -> 기본형태는 이렇게 쓰나 스프링부트 3.2 버전 이상부터 -parameter 옵션 
+//			비활성화 되있어서 따로 설정해야 위에처럼사용가능
+		var likedUsers = 
+				userService.getLikedUsersByPostId(postId, (UserEntity) authentication.getPrincipal());
+		logger.info("GET /api/v1/posts/{}", postId);
+		return ResponseEntity.ok(likedUsers);
 
 		//				matchingPost.map(post -> ResponseEntity.ok(post))
 //				.orElseGet(() -> ResponseEntity.notFound().build());
@@ -75,6 +93,13 @@ public class PostController {
 		logger.info("DELETE /api/v1/posts/{}", postId);
 		postService.deletePost(postId,  (UserEntity)authentication.getPrincipal());
 		return ResponseEntity.noContent().build();
+	} 
+	
+	@PostMapping("/{postId}/likes")
+	public ResponseEntity<Post> toggleLikePost(@PathVariable Long postId , Authentication authentication)  
+	{
+		var post = postService.toggleLike(postId,  (UserEntity)authentication.getPrincipal());
+		return ResponseEntity.ok(post);
 	} 
 	
 }
