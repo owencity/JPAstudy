@@ -2,9 +2,7 @@
 리액트 + 스프링부트 
 
 <br>
-<p align="center">
-  <img src="https://github.com/bamyanggang-project/bamyanggang-BE/assets/151708233/742e773e-2a98-44e6-9d78-0528f8ebf3f3">
-</p>
+
 
 # 1. 프로젝트 소개
 -Thread 스타일 SNS 구현 
